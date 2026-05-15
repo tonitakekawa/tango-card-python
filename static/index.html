@@ -90,11 +90,17 @@
     <div class="card-notation" id="card-notation"></div>
     <div class="card-reading" id="card-reading"></div>
     <div class="card-meaning" id="card-meaning"></div>
-    <div class="card-actions">
-      <button class="btn btn-play" onclick="playWord()">▶ 読み上げ</button>
-      <button class="btn btn-edit" onclick="openModal(currentIdx)">編集</button>
-      <button class="btn btn-delete" onclick="deleteWord()">削除</button>
-      <span id="now-playing"></span>
+    <div class="card-actions" style="flex-direction:column;align-items:flex-start;">
+      <div style="display:flex;align-items:center;gap:8px;width:100%;margin-bottom:10px;">
+        <select id="card-voice" style="flex:1;padding:8px 10px;border-radius:8px;border:1.5px solid #ddd;font-size:13px;outline:none;background:white;" onchange="onCardVoiceChange()"></select>
+        <span id="card-voice-loading" style="font-size:12px;color:#888;"></span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-play" onclick="playWord()">▶ 読み上げ</button>
+        <button class="btn btn-edit" onclick="openModal(currentIdx)">編集</button>
+        <button class="btn btn-delete" onclick="deleteWord()">削除</button>
+        <span id="now-playing"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -105,7 +111,8 @@
     <h2 id="modal-title">単語を追加</h2>
     <div class="form-row">
       <label>言語名（例：中国語）</label>
-      <input id="f-name" type="text" placeholder="中国語">
+      <input id="f-name" type="text" placeholder="中国語" list="lang-datalist" oninput="onLangNameInput()">
+      <datalist id="lang-datalist"></datalist>
     </div>
     <div class="form-row">
       <label>ロケール（例：zh-CN）</label>
@@ -183,12 +190,45 @@ function selectWord(idx) {
   const w = words[idx];
   document.getElementById('card-placeholder').style.display = 'none';
   document.getElementById('card').style.display = '';
-  document.getElementById('card-lang').textContent = `${w['圏'] || ''} / ${w['tts対象'] || ''}`;
+  document.getElementById('card-lang').textContent = w['圏'] || '';
   document.getElementById('card-notation').textContent = w['記述'] || '';
   document.getElementById('card-reading').textContent = w['読み方'] || '';
   document.getElementById('card-meaning').textContent = w['意味'] || '';
   document.getElementById('now-playing').textContent = '';
   renderList();
+  loadCardVoices(w);
+}
+
+async function loadCardVoices(w) {
+  const sel = document.getElementById('card-voice');
+  const loading = document.getElementById('card-voice-loading');
+  const locale = (w['tts対象'] || '').split('-').slice(0, 2).join('-');
+  if (!locale) { sel.innerHTML = '<option value="">（話者なし）</option>'; return; }
+  loading.textContent = '読み込み中...';
+  sel.innerHTML = '';
+  if (!voiceCache[locale]) {
+    try {
+      const res = await fetch(`/api/voices?lang=${encodeURIComponent(locale)}`);
+      voiceCache[locale] = await res.json();
+    } catch (e) {
+      sel.innerHTML = '<option>取得失敗</option>';
+      loading.textContent = '';
+      return;
+    }
+  }
+  voiceCache[locale].forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.ShortName;
+    opt.textContent = `${v.ShortName} (${v.Gender})`;
+    if (v.ShortName === w['tts対象']) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  loading.textContent = '';
+}
+
+function onCardVoiceChange() {
+  if (currentIdx < 0) return;
+  words[currentIdx]['tts対象'] = document.getElementById('card-voice').value;
 }
 
 async function playWord() {
@@ -197,10 +237,11 @@ async function playWord() {
   const status = document.getElementById('now-playing');
   status.textContent = '読み込み中...';
   try {
+    const voice = document.getElementById('card-voice').value || w['tts対象'];
     const res = await fetch('/api/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: w['記述'], voice: w['tts対象'] })
+      body: JSON.stringify({ text: w['記述'], voice })
     });
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -235,9 +276,35 @@ function openModal(idx = -1) {
   document.getElementById('f-notation').value = w['記述'] || '';
   document.getElementById('f-reading').value = w['読み方'] || '';
   document.getElementById('f-meaning').value = w['意味'] || '';
+  buildLangDatalist();
   document.getElementById('modal-overlay').classList.add('open');
   const locale = document.getElementById('f-locale').value;
   if (locale) loadVoices(locale, w['tts対象'] || '');
+}
+
+function buildLangDatalist() {
+  const dl = document.getElementById('lang-datalist');
+  dl.innerHTML = '';
+  const seen = new Set();
+  words.forEach(w => {
+    const lang = w['圏'];
+    if (lang && !seen.has(lang)) {
+      seen.add(lang);
+      const opt = document.createElement('option');
+      opt.value = lang;
+      dl.appendChild(opt);
+    }
+  });
+}
+
+function onLangNameInput() {
+  const name = document.getElementById('f-name').value;
+  const matched = words.find(w => w['圏'] === name);
+  if (!matched) return;
+  const locale = (matched['tts対象'] || '').split('-').slice(0, 2).join('-');
+  if (!locale) return;
+  document.getElementById('f-locale').value = locale;
+  loadVoices(locale, matched['tts対象'] || '');
 }
 
 function closeModal() {
