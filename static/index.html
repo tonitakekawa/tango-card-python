@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>単語カード</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
+
+  /* サイドバー */
+  #sidebar {
+    width: 280px; min-width: 200px; background: #1e1e2e; color: #cdd6f4;
+    display: flex; flex-direction: column; padding: 16px; gap: 10px;
+  }
+  #sidebar h1 { font-size: 18px; color: #cba6f7; margin-bottom: 4px; }
+  #search { width: 100%; padding: 8px 10px; border-radius: 8px; border: none; background: #313244; color: #cdd6f4; font-size: 14px; outline: none; }
+  #search::placeholder { color: #6c7086; }
+  #lang-filter { width: 100%; padding: 8px; border-radius: 8px; border: none; background: #313244; color: #cdd6f4; font-size: 14px; outline: none; }
+  #word-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .word-item {
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    transition: background 0.15s; user-select: none;
+  }
+  .word-item:hover { background: #313244; }
+  .word-item.active { background: #45475a; }
+  .word-item .wi-notation { font-size: 15px; font-weight: 600; }
+  .word-item .wi-lang { font-size: 11px; color: #a6adc8; margin-top: 2px; }
+  #btn-add { padding: 10px; border-radius: 8px; border: none; background: #cba6f7; color: #1e1e2e; font-weight: 700; cursor: pointer; font-size: 14px; }
+  #btn-add:hover { background: #b4befe; }
+
+  /* メインエリア */
+  #main { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; align-items: center; }
+
+  /* カード */
+  #card {
+    background: white; border-radius: 16px; padding: 32px 40px; max-width: 600px; width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  #card-placeholder { color: #a6adc8; font-size: 15px; text-align: center; margin-top: 80px; }
+  .card-lang { font-size: 13px; color: #888; margin-bottom: 8px; }
+  .card-notation { font-size: 48px; font-weight: 700; color: #1e1e2e; margin-bottom: 8px; }
+  .card-reading { font-size: 22px; color: #5c5f77; margin-bottom: 8px; }
+  .card-meaning { font-size: 18px; color: #888; margin-bottom: 24px; }
+  .card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-play { background: #a6e3a1; color: #1e1e2e; }
+  .btn-edit { background: #89b4fa; color: #1e1e2e; }
+  .btn-delete { background: #f38ba8; color: #1e1e2e; }
+  #now-playing { font-size: 13px; color: #888; margin-left: 4px; }
+
+  /* モーダル */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: white; border-radius: 16px; padding: 28px 32px; width: 480px; max-width: 95vw;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  }
+  #modal h2 { margin-bottom: 20px; font-size: 18px; color: #1e1e2e; }
+  .form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .form-row label { font-size: 13px; color: #555; font-weight: 600; }
+  .form-row input, .form-row select { padding: 9px 12px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 15px; outline: none; width: 100%; }
+  .form-row input:focus, .form-row select:focus { border-color: #cba6f7; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-primary { background: #cba6f7; color: #1e1e2e; flex: 1; }
+  .btn-cancel { background: #e8e8ef; color: #555; flex: 1; }
+  #voice-loading { font-size: 12px; color: #888; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>単語カード</h1>
+  <input id="search" type="text" placeholder="検索..." oninput="renderList()">
+  <select id="lang-filter" onchange="renderList()">
+    <option value="">すべての言語</option>
+  </select>
+  <div id="word-list"></div>
+  <button id="btn-add" onclick="openModal()">＋ 追加</button>
+</div>
+
+<div id="main">
+  <div id="card-placeholder">← 単語を選んでください</div>
+  <div id="card" style="display:none">
+    <div class="card-lang" id="card-lang"></div>
+    <div class="card-notation" id="card-notation"></div>
+    <div class="card-reading" id="card-reading"></div>
+    <div class="card-meaning" id="card-meaning"></div>
+    <div class="card-actions">
+      <button class="btn btn-play" onclick="playWord()">▶ 読み上げ</button>
+      <button class="btn btn-edit" onclick="openModal(currentIdx)">編集</button>
+      <button class="btn btn-delete" onclick="deleteWord()">削除</button>
+      <span id="now-playing"></span>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">単語を追加</h2>
+    <div class="form-row">
+      <label>言語名（例：中国語）</label>
+      <input id="f-name" type="text" placeholder="中国語">
+    </div>
+    <div class="form-row">
+      <label>ロケール（例：zh-CN）</label>
+      <input id="f-locale" type="text" placeholder="zh-CN" oninput="onLocaleInput()">
+    </div>
+    <div class="form-row">
+      <label>読み手（TTS対象）<span id="voice-loading"></span></label>
+      <select id="f-voice"></select>
+    </div>
+    <div class="form-row">
+      <label>記述（単語）</label>
+      <input id="f-notation" type="text" placeholder="泡沫">
+    </div>
+    <div class="form-row">
+      <label>読み方</label>
+      <input id="f-reading" type="text" placeholder="pào mò">
+    </div>
+    <div class="form-row">
+      <label>意味</label>
+      <input id="f-meaning" type="text" placeholder="泡">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveWord()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let words = [];
+let currentIdx = -1;
+let editIdx = -1;
+let voiceCache = {};
+
+async function loadWords() {
+  const res = await fetch('/api/words');
+  words = await res.json();
+  buildLangFilter();
+  renderList();
+}
+
+function buildLangFilter() {
+  const sel = document.getElementById('lang-filter');
+  const langs = [...new Set(words.map(w => w['圏']).filter(Boolean))];
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">すべての言語</option>';
+  langs.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    sel.appendChild(opt);
+  });
+  if (langs.includes(cur)) sel.value = cur;
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const lang = document.getElementById('lang-filter').value;
+  const list = document.getElementById('word-list');
+  list.innerHTML = '';
+  words.forEach((w, i) => {
+    if (lang && w['圏'] !== lang) return;
+    const notation = w['記述'] || '';
+    const reading = w['読み方'] || '';
+    if (q && !notation.toLowerCase().includes(q) && !reading.toLowerCase().includes(q)) return;
+    const el = document.createElement('div');
+    el.className = 'word-item' + (i === currentIdx ? ' active' : '');
+    el.innerHTML = `<div class="wi-notation">${notation}</div><div class="wi-lang">${w['圏'] || ''}</div>`;
+    el.onclick = () => selectWord(i);
+    list.appendChild(el);
+  });
+}
+
+function selectWord(idx) {
+  currentIdx = idx;
+  const w = words[idx];
+  document.getElementById('card-placeholder').style.display = 'none';
+  document.getElementById('card').style.display = '';
+  document.getElementById('card-lang').textContent = `${w['圏'] || ''} / ${w['tts対象'] || ''}`;
+  document.getElementById('card-notation').textContent = w['記述'] || '';
+  document.getElementById('card-reading').textContent = w['読み方'] || '';
+  document.getElementById('card-meaning').textContent = w['意味'] || '';
+  document.getElementById('now-playing').textContent = '';
+  renderList();
+}
+
+async function playWord() {
+  if (currentIdx < 0) return;
+  const w = words[currentIdx];
+  const status = document.getElementById('now-playing');
+  status.textContent = '読み込み中...';
+  try {
+    const res = await fetch('/api/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: w['記述'], voice: w['tts対象'] })
+    });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play();
+    status.textContent = '▶ 再生中';
+    audio.onended = () => { status.textContent = ''; URL.revokeObjectURL(url); };
+  } catch (e) {
+    status.textContent = 'エラー';
+  }
+}
+
+async function deleteWord() {
+  if (currentIdx < 0) return;
+  if (!confirm(`「${words[currentIdx]['記述']}」を削除しますか？`)) return;
+  await fetch(`/api/words/${currentIdx}`, { method: 'DELETE' });
+  currentIdx = -1;
+  document.getElementById('card').style.display = 'none';
+  document.getElementById('card-placeholder').style.display = '';
+  await loadWords();
+}
+
+// モーダル
+let localeTimer = null;
+
+function openModal(idx = -1) {
+  editIdx = idx;
+  document.getElementById('modal-title').textContent = idx >= 0 ? '単語を編集' : '単語を追加';
+  const w = idx >= 0 ? words[idx] : {};
+  document.getElementById('f-name').value = w['圏'] || '';
+  document.getElementById('f-locale').value = (w['tts対象'] || '').split('-').slice(0, 2).join('-');
+  document.getElementById('f-notation').value = w['記述'] || '';
+  document.getElementById('f-reading').value = w['読み方'] || '';
+  document.getElementById('f-meaning').value = w['意味'] || '';
+  document.getElementById('modal-overlay').classList.add('open');
+  const locale = document.getElementById('f-locale').value;
+  if (locale) loadVoices(locale, w['tts対象'] || '');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function onLocaleInput() {
+  clearTimeout(localeTimer);
+  localeTimer = setTimeout(() => {
+    const locale = document.getElementById('f-locale').value.trim();
+    if (locale.length >= 2) loadVoices(locale);
+  }, 400);
+}
+
+async function loadVoices(locale, selectedVoice = '') {
+  const sel = document.getElementById('f-voice');
+  const loading = document.getElementById('voice-loading');
+  loading.textContent = '読み込み中...';
+  sel.innerHTML = '';
+  if (voiceCache[locale]) {
+    populateVoices(voiceCache[locale], selectedVoice);
+    loading.textContent = '';
+    return;
+  }
+  try {
+    const res = await fetch(`/api/voices?lang=${encodeURIComponent(locale)}`);
+    const voices = await res.json();
+    voiceCache[locale] = voices;
+    populateVoices(voices, selectedVoice);
+  } catch (e) {
+    sel.innerHTML = '<option>取得失敗</option>';
+  }
+  loading.textContent = '';
+}
+
+function populateVoices(voices, selectedVoice) {
+  const sel = document.getElementById('f-voice');
+  sel.innerHTML = '';
+  voices.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.ShortName;
+    opt.textContent = `${v.ShortName} (${v.Gender})`;
+    if (v.ShortName === selectedVoice) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function saveWord() {
+  const word = {
+    '圏': document.getElementById('f-name').value.trim(),
+    'tts対象': document.getElementById('f-voice').value,
+    '記述': document.getElementById('f-notation').value.trim(),
+    '読み方': document.getElementById('f-reading').value.trim(),
+    '意味':   document.getElementById('f-meaning').value.trim(),
+  };
+  if (!word['記述']) { alert('記述は必須です'); return; }
+  if (editIdx >= 0) {
+    await fetch(`/api/words/${editIdx}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(word)
+    });
+  } else {
+    await fetch('/api/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(word)
+    });
+  }
+  closeModal();
+  await loadWords();
+  if (editIdx >= 0) selectWord(editIdx);
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+loadWords();
+</script>
+</body>
+</html>
