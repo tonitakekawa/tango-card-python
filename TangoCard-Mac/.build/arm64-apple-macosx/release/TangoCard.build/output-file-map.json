@@ -1,0 +1,49 @@
+{
+  "": {
+    "dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCard.d",
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCard.o",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/primary.swiftdeps"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/ContentView.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/ContentView.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/ContentView.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/TOMLConverter.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TOMLConverter.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TOMLConverter~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TOMLConverter.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TOMLConverter.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/TTSService.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TTSService.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TTSService~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TTSService.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TTSService.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/TangoCardApp.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCardApp.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCardApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCardApp.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/TangoCardApp.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/Word.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/Word.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/Word~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/Word.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/Word.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/WordCardView.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordCardView.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordCardView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordCardView.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordCardView.dia"
+  },
+  "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/Sources/TangoCard/WordFormView.swift": {
+    "object": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordFormView.swift.o",
+    "swiftmodule": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordFormView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordFormView.swiftdeps",
+    "diagnostics": "/Users/tnyt/Desktop/tango-card-python/TangoCard-Mac/.build/arm64-apple-macosx/release/TangoCard.build/WordFormView.dia"
+  }
+}
