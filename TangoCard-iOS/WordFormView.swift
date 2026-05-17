@@ -67,6 +67,11 @@ struct WordFormView: View {
                     LabeledContent("記述") {
                         TextField("泡沫", text: $notation)
                             .multilineTextAlignment(.trailing)
+                            .onChange(of: notation) { _, new in
+                                if language == "中国語" && reading.isEmpty && !new.isEmpty {
+                                    reading = toPinyin(new)
+                                }
+                            }
                     }
                     LabeledContent("読み方") {
                         TextField("pào mò", text: $reading)
@@ -134,6 +139,12 @@ struct WordFormView: View {
         case .enhanced: return "\(v.name) ★★"
         default:        return v.name
         }
+    }
+
+    private func toPinyin(_ text: String) -> String {
+        let mutable = NSMutableString(string: text)
+        CFStringTransform(mutable, nil, kCFStringTransformMandarinLatin, false)
+        return mutable as String
     }
 
     private func save() {

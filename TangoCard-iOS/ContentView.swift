@@ -1,15 +1,31 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
+
+struct TOMLFile: FileDocument {
+    static var readableContentTypes: [UTType] = [.plainText]
+    var data: Data
+    init(content: String) { self.data = Data(content.utf8) }
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Word.createdAt) private var words: [Word]
+    @Query(sort: \Word.createdAt, order: .reverse) private var words: [Word]
 
     @State private var selectedWord: Word?
     @State private var searchText = ""
     @State private var selectedLanguage = ""
     @State private var showingForm = false
     @State private var editingWord: Word?
+    @State private var showingExporter = false
+    @State private var showingImporter = false
+    @State private var exportedFile: TOMLFile?
 
     var languages: [String] {
         Array(Set(words.map { $0.language }.filter { !$0.isEmpty })).sorted()
@@ -59,6 +75,14 @@ struct ContentView: View {
                         Image(systemName: "plus")
                     }
                 }
+                ToolbarItem(placement: .secondaryAction) {
+                    Menu {
+                        Button("エクスポート", systemImage: "square.and.arrow.up") { exportWords() }
+                        Button("インポート", systemImage: "square.and.arrow.down") { showingImporter = true }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
             }
         } detail: {
             if let word = selectedWord {
@@ -79,6 +103,31 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingForm) {
             WordFormView(word: editingWord)
+        }
+        .fileExporter(
+            isPresented: $showingExporter,
+            document: exportedFile,
+            contentType: .plainText,
+            defaultFilename: "tango-card.toml"
+        ) { _ in exportedFile = nil }
+        .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.plainText, .text, .data]) { result in
+            importWords(result: result)
+        }
+    }
+
+    private func exportWords() {
+        exportedFile = TOMLFile(content: TOMLConverter.serialize(words: words))
+        showingExporter = true
+    }
+
+    private func importWords(result: Result<URL, Error>) {
+        guard case .success(let url) = result,
+              url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
+        for w in TOMLConverter.parse(content) {
+            modelContext.insert(Word(language: w.language, locale: w.locale, voice: w.voice,
+                                    notation: w.notation, reading: w.reading, meaning: w.meaning))
         }
     }
 }
