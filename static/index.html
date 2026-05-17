@@ -28,6 +28,12 @@
   .word-item .wi-lang { font-size: 11px; color: #a6adc8; margin-top: 2px; }
   #btn-add { padding: 10px; border-radius: 8px; border: none; background: #cba6f7; color: #1e1e2e; font-weight: 700; cursor: pointer; font-size: 14px; }
   #btn-add:hover { background: #b4befe; }
+  .io-btns { display: flex; gap: 6px; }
+  .io-btns button { flex: 1; padding: 8px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+  #btn-export { background: #313244; color: #a6e3a1; }
+  #btn-export:hover { background: #45475a; }
+  #btn-import { background: #313244; color: #89b4fa; }
+  #btn-import:hover { background: #45475a; }
 
   /* メインエリア */
   #main { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; align-items: center; }
@@ -81,6 +87,11 @@
   </select>
   <div id="word-list"></div>
   <button id="btn-add" onclick="openModal()">＋ 追加</button>
+  <div class="io-btns">
+    <button id="btn-export" onclick="exportData()">↓ エクスポート</button>
+    <button id="btn-import" onclick="document.getElementById('import-input').click()">↑ インポート</button>
+  </div>
+  <input id="import-input" type="file" accept=".toml" style="display:none" onchange="importData(event)">
 </div>
 
 <div id="main">
@@ -124,7 +135,7 @@
     </div>
     <div class="form-row">
       <label>記述（単語）</label>
-      <input id="f-notation" type="text" placeholder="泡沫">
+      <input id="f-notation" type="text" placeholder="泡沫" oninput="onNotationInput()">
     </div>
     <div class="form-row">
       <label>読み方</label>
@@ -383,6 +394,48 @@ async function saveWord() {
 document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) closeModal();
 });
+
+let notationTimer = null;
+function onNotationInput() {
+  const lang = document.getElementById('f-name').value;
+  if (lang !== '中国語') return;
+  const text = document.getElementById('f-notation').value.trim();
+  if (!text) return;
+  clearTimeout(notationTimer);
+  notationTimer = setTimeout(async () => {
+    const res = await fetch(`/api/pinyin?text=${encodeURIComponent(text)}`);
+    const data = await res.json();
+    const readingField = document.getElementById('f-reading');
+    if (readingField.value === '') readingField.value = data.pinyin;
+  }, 400);
+}
+
+function exportData() {
+  const a = document.createElement('a');
+  a.href = '/api/export';
+  a.download = 'data.toml';
+  a.click();
+}
+
+async function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const res = await fetch('/api/import', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) { alert('インポート失敗: ' + data.error); return; }
+    alert(`インポート完了：${data.count}件`);
+    currentIdx = -1;
+    document.getElementById('card').style.display = 'none';
+    document.getElementById('card-placeholder').style.display = '';
+    await loadWords();
+  } catch (err) {
+    alert('インポートエラー: ' + err);
+  }
+  e.target.value = '';
+}
 
 loadWords();
 </script>

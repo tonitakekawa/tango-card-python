@@ -1,8 +1,9 @@
 import asyncio
 import io
 import tomllib
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 import edge_tts
+from pypinyin import lazy_pinyin, Style
 
 app = Flask(__name__, static_folder="static")
 DATA_FILE = "data.toml"
@@ -48,7 +49,7 @@ def get_words():
 def add_word():
     word = request.json
     data = load_data()
-    data.setdefault("概念", []).append(word)
+    data.setdefault("概念", []).insert(0, word)
     save_data(data)
     return jsonify({"ok": True})
 
@@ -100,6 +101,38 @@ def speak():
 
     audio = asyncio.run(generate())
     return audio, 200, {"Content-Type": "audio/mpeg"}
+
+
+@app.route("/api/pinyin")
+def get_pinyin():
+    text = request.args.get("text", "")
+    pinyin = " ".join(lazy_pinyin(text, style=Style.TONE))
+    return jsonify({"pinyin": pinyin})
+
+
+@app.route("/api/export")
+def export_data():
+    with open(DATA_FILE, "rb") as f:
+        content = f.read()
+    return Response(
+        content,
+        mimetype="application/octet-stream",
+        headers={"Content-Disposition": "attachment; filename=data.toml"}
+    )
+
+
+@app.route("/api/import", methods=["POST"])
+def import_data():
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "ファイルがありません"}), 400
+    try:
+        content = file.read()
+        data = tomllib.loads(content.decode("utf-8"))
+    except Exception as e:
+        return jsonify({"error": f"パースエラー: {e}"}), 400
+    save_data(data)
+    return jsonify({"ok": True, "count": len(data.get("概念", []))})
 
 
 if __name__ == "__main__":
